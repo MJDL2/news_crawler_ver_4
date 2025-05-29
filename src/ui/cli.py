@@ -262,7 +262,7 @@ class CLI:
             sort=args.sort,
             news_type=args.type,
             extract_content=args.extract_content,
-            content_limit=0,  # 전체 제한은 일별 제한으로 처리
+            content_limit=args.content_limit,  # 전체 제한 개수 전달
             extraction_mode=args.extraction_mode,
             daily_limit=daily_limit,
             save_intermediate=True
