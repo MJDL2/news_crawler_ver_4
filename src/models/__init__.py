@@ -1,5 +1,5 @@
 """
-데이터 모델 모듈
+데이터 모델 패키지
 """
 
 from .news import NewsURL, NewsArticle, CrawlResult
