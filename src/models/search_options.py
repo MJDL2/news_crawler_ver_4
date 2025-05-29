@@ -123,23 +123,31 @@ class NaverNewsSearchOption:
     
     def build_url(self) -> str:
         """설정된 옵션으로 네이버 뉴스 검색 URL 생성"""
+        # 날짜 형식 변환 (YYYYMMDD → YYYY.MM.DD)
+        ds_formatted = ""
+        de_formatted = ""
+        if self.start_date:
+            ds_formatted = f"{self.start_date[:4]}.{self.start_date[4:6]}.{self.start_date[6:8]}"
+        if self.end_date:
+            de_formatted = f"{self.end_date[:4]}.{self.end_date[4:6]}.{self.end_date[6:8]}"
+            
         params = {
-            "where": "news",
+            "ssc": "tab.news.all",
             "query": self.query,
             "sm": "tab_opt",
             "sort": self.sort,
             "photo": "0" if self.news_type == self.TYPE_ALL else "1" if self.news_type == self.TYPE_PHOTO else "0",
             "field": "0",
-            "pd": self.period,
-            "ds": self.start_date if self.start_date else "",
-            "de": self.end_date if self.end_date else "",
+            "pd": "3" if self.period == self.PERIOD_CUSTOM else self.period,  # 직접입력은 pd=3
+            "ds": ds_formatted,
+            "de": de_formatted,
             "docid": "",
             "related": "0",
             "mynews": "0",
             "office_type": "0",
             "office_section_code": "0",
             "news_office_checked": ",".join(self.news_office) if self.news_office else "",
-            "nso": f"so:r,{self._get_period_param()},a:all",
+            "nso": f"so:r,p:{self._get_period_param()},a:all",  # 정상적인 형식으로 변경
             "is_sug_officeid": "0",
             "office_category": "",
             "service_area": "",
