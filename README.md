@@ -1,4 +1,4 @@
-# 네이버 뉴스 크롤러 v4.2.0
+# 네이버 뉴스 크롤러 v4.2.1
 
 네이버 뉴스 검색 결과를 수집하고 본문을 추출하는 Python 기반 크롤러입니다.
 
@@ -23,8 +23,8 @@
 
 ```bash
 # 저장소 클론
-git clone https://github.com/your-username/news-crawler-v4.git
-cd news-crawler-v4
+git clone https://github.com/MJDL2/news_crawler_ver_4.git
+cd news_crawler_ver_4
 
 # 의존성 설치
 pip install -r requirements.txt
@@ -125,6 +125,13 @@ news_crawler_ver_4/
 ├── dev/            # 개발 관련 파일
 │   └── analysis/   # 구조 분석 스크립트
 ├── docs/           # 프로젝트 문서
+│   ├── issues/     # 이슈 및 문제 분석 (v4.2.1)
+│   ├── ARCHITECTURE.md     # 아키텍처 설계
+│   ├── DEVELOPMENT.md      # 개발 가이드
+│   ├── PROGRESS.md         # 진행 상황
+│   ├── USER_GUIDE.md       # 사용자 가이드
+│   ├── 403_ERROR_GUIDE.md  # 403 오류 해결
+│   └── PYTHON313_FIX.md    # Python 3.13 호환성
 ├── tests/          # 테스트 코드
 ├── test_scripts/   # 테스트 스크립트 (v4.2)
 ├── config.json     # 레거시 설정 파일
@@ -198,9 +205,9 @@ Python 3.13 사용 시 cookiejar 오류가 발생하는 경우:
 
 더 많은 문제 해결 방법은 [사용자 가이드](docs/USER_GUIDE.md#8-문제-해결)를 참조하세요.
 
-## 주의사항
+## 라이선스 및 주의사항
 
-- 개인적인 뉴스 데이터 분석을 위해 제작된 도구입니다
+- 이 프로젝트는 교육 및 연구 목적으로 제작되었습니다
 - 수집된 데이터의 저작권은 각 언론사에 있습니다
 - 과도한 요청으로 인한 서버 부하를 주의하세요
 - 네이버 서비스 이용약관을 준수하세요
@@ -220,6 +227,7 @@ Python 3.13 사용 시 cookiejar 오류가 발생하는 경우:
 
 ## 버전 히스토리
 
+- **v4.2.1 (2025-05-29)**: 날짜별 수집 문제 분석, issues 디렉토리 추가
 - **v4.2.0 (2025-05-29)**: 통합 설정 파일, 세션 풀 관리, 403 오류 대응 강화
 - **v4.1.x (2025-05-28)**: 복수 검색어, 언론사 선택, 대화형 인터페이스 개선
 - **v4.0.0 (2025-05-28)**: 전면 리팩토링, 모듈화 아키텍처
