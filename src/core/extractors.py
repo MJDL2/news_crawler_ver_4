@@ -293,16 +293,18 @@ class NaverNewsURLExtractor(URLExtractor):
                     collected_urls.append(url)
                     new_urls_count += 1
                     logger.debug(f"새 URL 추가: {url.title[:30] if url.title else url.url[:50]}...")
-                else:
-                    logger.debug(f"중복 URL 스킵: {url.url[:50]}...")
                     
+                    # max_urls 제한 체크를 새 URL 추가 직후로 이동
                     if max_urls > 0 and len(collected_urls) >= max_urls:
                         logger.info(f"URL 수집 제한({max_urls}개) 도달")
                         return collected_urls
+                else:
+                    logger.debug(f"중복 URL 스킵: {url.url[:50]}...")
             
             # 종료 조건 확인
             if new_urls_count > 0:
                 logger.info(f"페이지 {page}: {new_urls_count}개 신규 URL (총 {len(collected_urls)}개)")
+                print(f"  페이지 {page}: {new_urls_count}개 신규 URL (총 {len(collected_urls)}개)")
                 consecutive_empty_pages = 0
             else:
                 consecutive_empty_pages += 1
