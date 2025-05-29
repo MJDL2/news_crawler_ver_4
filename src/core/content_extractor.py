@@ -6,11 +6,12 @@
 
 import re
 import logging
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 from bs4 import BeautifulSoup
 
 from .extractors import URLExtractor
 from ..models.news import NewsArticle
+from ..utils.config import get_config
 
 logger = logging.getLogger(__name__)
 
@@ -22,9 +23,14 @@ class ContentExtractor(URLExtractor):
         if not element:
             return ""
             
+        # 설정에서 불필요한 요소 목록 가져오기
+        config = get_config()
+        remove_elements = config.extraction.remove_elements
+        
         # 불필요한 요소 제거
-        for tag in element.select('.ad_wrap, .link_news_relation, script, style'):
-            tag.decompose()
+        for selector in remove_elements:
+            for tag in element.select(selector):
+                tag.decompose()
             
         # 단락별 텍스트 추출
         paragraphs = []
@@ -39,52 +45,29 @@ class ContentExtractor(URLExtractor):
 class NaverNewsContentExtractor(ContentExtractor):
     """네이버 뉴스 콘텐츠 추출기"""
     
-    # 제목 선택자
-    TITLE_SELECTORS = [
-        'h2.media_end_head_headline',
-        'div.media_end_head_title .media_end_head_headline',
-        '#ct > div.media_end_head.go_trans > div.media_end_head_title > h2',
-        '.article_header h3',
-        '.content h3.tit_view'
-    ]
+    def __init__(self):
+        super().__init__()
+        # 설정에서 CSS 선택자 로드
+        self._load_selectors()
     
-    # 언론사 선택자
-    PRESS_SELECTORS = [
-        'a.media_end_head_top_logo img',
-        'div.press_logo img',
-        '.article_header .logo img',
-        '.press_logo_wrap img'
-    ]
-    
-    # 날짜 선택자
-    DATE_SELECTORS = [
-        ('span.media_end_head_info_datestamp_time', 'data-date-time'),
-        ('div.media_end_head_info_datestamp_time', 'data-date-time'),
-        ('span.media_end_head_info_datestamp_time', 'data-modify-date-time'),
-        ('div.article_info em', None),
-        ('.article_header .date', None),
-        ('.article_info span.time', None)
-    ]
-    
-    # 본문 선택자
-    CONTENT_SELECTORS = [
-        'div#newsct_article',
-        'div#articleBodyContents',
-        'div.article_body_contents',
-        'div#articeBody',
-        'div.news_content',
-        'div.article_view_contents',
-        '#articleBody'
-    ]
-    
-    # 기자 선택자
-    REPORTER_SELECTORS = [
-        '.media_end_head_journalist_name',
-        '.byline',
-        '.journalist',
-        '.article_footer .name',
-        '.reporter'
-    ]
+    def _load_selectors(self):
+        """설정 파일에서 CSS 선택자를 로드합니다."""
+        config = get_config()
+        selectors = config.extraction.content_selectors
+        
+        self.TITLE_SELECTORS = selectors.get('title', [])
+        self.PRESS_SELECTORS = selectors.get('press', [])
+        self.CONTENT_SELECTORS = selectors.get('content', [])
+        self.REPORTER_SELECTORS = selectors.get('reporter', [])
+        
+        # 날짜 선택자는 특별한 형식이므로 변환
+        date_selectors = selectors.get('date', [])
+        self.DATE_SELECTORS = []
+        for item in date_selectors:
+            if isinstance(item, dict):
+                self.DATE_SELECTORS.append((item.get('selector'), item.get('attribute')))
+            else:
+                self.DATE_SELECTORS.append((item, None))
     
     def extract_news_content(self, url: str) -> NewsArticle:
         """단일 뉴스 URL에서 콘텐츠 추출"""
@@ -95,9 +78,17 @@ class NaverNewsContentExtractor(ContentExtractor):
         if not html_content:
             return article
             
-        soup = BeautifulSoup(html_content, 'html.parser')
+        try:
+            soup = BeautifulSoup(html_content, 'lxml')
+        except:
+            # lxml 파서가 없을 경우 기본 파서 사용
+            soup = BeautifulSoup(html_content, 'html.parser')
         
         try:
+            # 설정 다시 로드 (런타임 중 변경될 수 있음)
+            self._load_selectors()
+            config = get_config()
+            
             # 제목 추출
             for selector in self.TITLE_SELECTORS:
                 elem = soup.select_one(selector)
@@ -126,8 +117,19 @@ class NaverNewsContentExtractor(ContentExtractor):
             for selector in self.CONTENT_SELECTORS:
                 elem = soup.select_one(selector)
                 if elem:
-                    article.content = self.extract_text_from_element(elem)
-                    break
+                    content_text = self.extract_text_from_element(elem)
+                    # 본문 길이 검증
+                    content_length = len(content_text)
+                    if content_length >= config.extraction.min_content_length:
+                        if content_length <= config.extraction.max_content_length:
+                            article.content = content_text
+                        else:
+                            # 최대 길이 초과 시 잘라내기
+                            article.content = content_text[:config.extraction.max_content_length]
+                            logger.warning(f"본문이 너무 길어 잘라냈습니다: {url}")
+                        break
+                    else:
+                        logger.debug(f"본문이 너무 짧음 ({content_length}자): {selector}")
             
             # 기자 추출
             for selector in self.REPORTER_SELECTORS:
@@ -138,10 +140,13 @@ class NaverNewsContentExtractor(ContentExtractor):
             
             # 본문에서 기자 정보 추출 시도
             if not article.reporter and article.content:
-                reporter_pattern = r'([가-힣]{2,5}\s*(기자|특파원))'
-                match = re.search(reporter_pattern, article.content)
-                if match:
-                    article.reporter = match.group(1).strip()
+                try:
+                    reporter_pattern = r'([가-힣]{2,5}\s*(기자|특파원))'
+                    match = re.search(reporter_pattern, article.content)
+                    if match:
+                        article.reporter = match.group(1).strip()
+                except (AttributeError, TypeError) as e:
+                    logger.debug(f"기자명 추출 중 오류 무시: {e}")
             
             if article.title:
                 logger.debug(f"콘텐츠 추출 성공: {article.title[:30]}...")
