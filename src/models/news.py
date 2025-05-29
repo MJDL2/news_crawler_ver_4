@@ -51,54 +51,53 @@ class NewsArticle:
         }
     
     def is_valid(self) -> bool:
-        """유효한 기사인지 확인"""
-        return bool(self.title or self.content)
+        """기사 데이터가 유효한지 확인"""
+        return bool(self.title and self.content and len(self.content.strip()) > 50)
 
-@dataclass
+@dataclass 
 class CrawlResult:
     """크롤링 결과 데이터 모델"""
     query: str
     period: str
-    collected_urls: List[NewsURL] = field(default_factory=list)
-    extracted_articles: List[NewsArticle] = field(default_factory=list)
-    started_at: datetime = field(default_factory=datetime.now)
-    completed_at: Optional[datetime] = None
-    errors: List[Dict[str, Any]] = field(default_factory=list)
+    urls: List[NewsURL] = field(default_factory=list)
+    articles: List[NewsArticle] = field(default_factory=list)
+    errors: List[Dict[str, str]] = field(default_factory=list)
+    start_time: Optional[datetime] = field(default_factory=datetime.now)
+    end_time: Optional[datetime] = None
     
     def add_url(self, url: NewsURL):
         """URL 추가"""
-        self.collected_urls.append(url)
+        self.urls.append(url)
     
     def add_article(self, article: NewsArticle):
         """기사 추가"""
-        self.extracted_articles.append(article)
+        self.articles.append(article)
     
-    def add_error(self, error_type: str, message: str, details: Optional[Dict] = None):
+    def add_error(self, error_type: str, message: str):
         """에러 추가"""
         self.errors.append({
             'type': error_type,
             'message': message,
-            'details': details or {},
-            'occurred_at': datetime.now().isoformat()
+            'timestamp': datetime.now().isoformat()
         })
     
     def complete(self):
         """크롤링 완료 처리"""
-        self.completed_at = datetime.now()
+        self.end_time = datetime.now()
     
-    def get_stats(self) -> Dict[str, Any]:
-        """통계 정보 반환"""
-        duration = None
-        if self.completed_at:
-            duration = (self.completed_at - self.started_at).total_seconds()
-            
+    def to_dict(self) -> Dict[str, Any]:
+        """딕셔너리로 변환"""
         return {
             'query': self.query,
             'period': self.period,
-            'urls_collected': len(self.collected_urls),
-            'articles_extracted': len(self.extracted_articles),
-            'errors_count': len(self.errors),
-            'started_at': self.started_at.isoformat(),
-            'completed_at': self.completed_at.isoformat() if self.completed_at else None,
-            'duration_seconds': duration
+            'urls': [url.to_dict() for url in self.urls],
+            'articles': [article.to_dict() for article in self.articles],
+            'errors': self.errors,
+            'start_time': self.start_time.isoformat() if self.start_time else None,
+            'end_time': self.end_time.isoformat() if self.end_time else None,
+            'stats': {
+                'total_urls': len(self.urls),
+                'total_articles': len(self.articles),
+                'total_errors': len(self.errors)
+            }
         }
