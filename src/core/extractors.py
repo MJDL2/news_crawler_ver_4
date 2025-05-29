@@ -15,6 +15,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from ..utils.config import get_config
+from ..utils.session_pool import get_session_pool
 from ..models.news import NewsURL
 
 logger = logging.getLogger(__name__)
@@ -25,15 +26,30 @@ class URLExtractor:
     def __init__(self):
         self.config = get_config()
         self._session = None
+        self._use_session_pool = False
+        
+        # 설정에서 세션 풀 사용 여부 확인
+        if hasattr(self.config, 'advanced') and self.config.advanced.session_management:
+            self._use_session_pool = self.config.advanced.session_management.get('enable_cookie_persistence', True)
+        
+        if self._use_session_pool:
+            try:
+                self._session_pool = get_session_pool()
+                logger.info("세션 풀 사용 모드로 초기화")
+            except Exception as e:
+                logger.warning(f"세션 풀 초기화 실패, 단일 세션 모드로 전환: {e}")
+                self._use_session_pool = False
     
     @property
     def session(self) -> requests.Session:
-        """요청 세션 반환 (지연 생성)"""
+        """요청 세션 반환"""
+        if self._use_session_pool:
+            return self._session_pool.get_session()
+        
+        # 기존 단일 세션 방식 (하위 호환성)
         if self._session is None:
             self._session = requests.Session()
             self._session.headers.update(self.config.get_headers())
-            # 쿠키 정책 설정 제거 - Python 3.13 호환성 문제
-            # self._session.cookies.set_policy(None)
             
             # 프록시 설정 (환경 변수에서 읽기)
             import os
@@ -74,7 +90,10 @@ class URLExtractor:
                     sleep_time = self.config.network.backoff_factor ** attempt
                     time.sleep(sleep_time)
                 
-                response = self.session.get(
+                # 세션 풀 사용 시 매 요청마다 새로운 세션 가져오기
+                current_session = self.session
+                
+                response = current_session.get(
                     url, 
                     timeout=self.config.network.timeout
                 )
@@ -85,18 +104,25 @@ class URLExtractor:
                 if e.response.status_code == 403:
                     logger.error(f"403 Forbidden 오류 - 네이버가 요청을 차단했습니다.")
                     logger.error(f"URL: {url}")
-                    logger.error(f"응답 헤더: {e.response.headers}")
-                    logger.error(f"쿠키: {self.session.cookies.get_dict()}")
+                    
+                    # 세션 풀 사용 시 에러 마킹
+                    if self._use_session_pool:
+                        self._session_pool.mark_error(current_session, 403)
                     
                     # 403 오류 시 특별 처리
                     if attempt < self.config.network.retries - 1:
                         # 점진적으로 증가하는 대기 시간
-                        wait_time = min(30 + (attempt * 20), 120)  # 최대 2분
+                        if hasattr(self.config, 'advanced') and self.config.advanced.anti_403.get('enable_progressive_backoff'):
+                            max_backoff = self.config.advanced.anti_403.get('max_backoff_seconds', 120)
+                            wait_time = min(30 + (attempt * 20), max_backoff)
+                        else:
+                            wait_time = min(30 + (attempt * 20), 120)  # 최대 2분
+                            
                         logger.info(f"{wait_time}초 대기 후 재시도...")
                         time.sleep(wait_time)
                         
                         # 세션 재생성 시도
-                        if attempt >= 1:
+                        if attempt >= 1 and not self._use_session_pool:
                             logger.info("세션을 재생성합니다...")
                             self._session = None  # 기존 세션 제거
                             _ = self.session  # 새 세션 생성
@@ -137,7 +163,12 @@ class NaverNewsURLExtractor(URLExtractor):
     
     def extract_news_urls(self, html: str) -> List[NewsURL]:
         """검색 결과 HTML에서 기사 URL 목록 추출"""
-        soup = BeautifulSoup(html, "html.parser")
+        try:
+            soup = BeautifulSoup(html, "lxml")
+        except:
+            # lxml 파서가 없을 경우 기본 파서 사용
+            soup = BeautifulSoup(html, "html.parser")
+            
         results: List[NewsURL] = []
         seen_urls = set()
         seen_titles = set()
