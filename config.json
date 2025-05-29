@@ -1,0 +1,47 @@
+{
+  "network": {
+    "timeout": 30,
+    "retries": 3,
+    "backoff_factor": 2,
+    "request_delay_min": 1.0,
+    "request_delay_max": 3.0,
+    "content_delay_min": 1.5,
+    "content_delay_max": 3.5,
+    "headers": {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    }
+  },
+  "storage": {
+    "root_dir": "data",
+    "news_data_dir": "data/news_data",
+    "url_data_dir": "data/url_data",
+    "temp_dir": "data/temp",
+    "file_encoding": "utf-8"
+  },
+  "crawling": {
+    "max_pages_per_search": 10,
+    "max_urls_per_search": 100,
+    "batch_size": 20,
+    "save_intermediate": true,
+    "skip_duplicates": true
+  },
+  "extraction": {
+    "content_selectors": {
+      "title": ["h2.media_end_head_headline", "h1", "h2", "h3"],
+      "content": ["div#newsct_article", "div#articleBodyContents", "div.news_end_story_body", "div#articeBody", "div#article-view-content-div"],
+      "date": ["span.media_end_head_info_datestamp_time", "span.t11", "span.author"],
+      "press": ["img.media_end_head_top_logo_img", "div.press_logo img", "a.media_end_head_top_logo"],
+      "reporter": ["span.media_end_head_journalist_name", "span.byline_s", "span.byline"]
+    },
+    "timeout": 10,
+    "min_content_length": 100,
+    "max_content_length": 50000
+  },
+  "ui": {
+    "show_progress": true,
+    "confirm_before_start": true,
+    "default_period": "1m",
+    "default_sort": "relevance",
+    "default_news_type": "all"
+  }
+}

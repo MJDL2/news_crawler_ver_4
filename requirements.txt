@@ -1,0 +1,13 @@
+# Naver News Crawler Dependencies
+
+# Core packages
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+
+# Optional packages
+tqdm>=4.66.0
+
+# Development dependencies (optional)
+# pytest>=7.4.0
+# black>=23.12.0
+# flake8>=6.1.0
