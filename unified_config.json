@@ -1,0 +1,129 @@
+{
+  "network": {
+    "timeout": 30,
+    "retries": 3,
+    "backoff_factor": 2.0,
+    "request_delay_min": 1.0,
+    "request_delay_max": 3.0,
+    "content_delay_min": 1.5,
+    "content_delay_max": 3.5,
+    "user_agents": [
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0",
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+      "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0"
+    ]
+  },
+  "storage": {
+    "root_dir": "data",
+    "news_data_dir": "data/news_data",
+    "url_data_dir": "data/url_data",
+    "test_results_dir": "data/test_results",
+    "temp_dir": "data/temp",
+    "max_news_per_file": 20,
+    "file_encoding": "utf-8"
+  },
+  "crawling": {
+    "max_pages_per_search": 10,
+    "max_urls_per_search": 100,
+    "batch_size": 20,
+    "save_intermediate": true,
+    "skip_duplicates": true,
+    "delay_between_requests": 2.0,
+    "similarity_threshold": 0.8,
+    "enable_progress_bar": true,
+    "log_level": "INFO"
+  },
+  "extraction": {
+    "content_selectors": {
+      "title": [
+        "h2.media_end_head_headline",
+        "div.media_end_head_title .media_end_head_headline",
+        "#ct > div.media_end_head.go_trans > div.media_end_head_title > h2",
+        ".article_header h3",
+        ".content h3.tit_view",
+        "h1",
+        "h2",
+        "h3"
+      ],
+      "content": [
+        "div#newsct_article",
+        "div#articleBodyContents",
+        "div.article_body_contents",
+        "div#articeBody",
+        "div.news_content",
+        "div.article_view_contents",
+        "#articleBody",
+        "div.news_end_story_body",
+        "div#article-view-content-div"
+      ],
+      "date": [
+        {"selector": "span.media_end_head_info_datestamp_time", "attribute": "data-date-time"},
+        {"selector": "div.media_end_head_info_datestamp_time", "attribute": "data-date-time"},
+        {"selector": "span.media_end_head_info_datestamp_time", "attribute": "data-modify-date-time"},
+        {"selector": "div.article_info em", "attribute": null},
+        {"selector": ".article_header .date", "attribute": null},
+        {"selector": ".article_info span.time", "attribute": null},
+        {"selector": "span.t11", "attribute": null},
+        {"selector": "span.author", "attribute": null}
+      ],
+      "press": [
+        "a.media_end_head_top_logo img",
+        "div.press_logo img",
+        ".article_header .logo img",
+        ".press_logo_wrap img",
+        "img.media_end_head_top_logo_img"
+      ],
+      "reporter": [
+        ".media_end_head_journalist_name",
+        "span.media_end_head_journalist_name",
+        ".byline",
+        ".journalist",
+        ".article_footer .name",
+        ".reporter",
+        "span.byline_s",
+        "span.byline"
+      ]
+    },
+    "timeout": 10,
+    "min_content_length": 100,
+    "max_content_length": 50000,
+    "remove_elements": [
+      ".ad_wrap",
+      ".link_news_relation",
+      "script",
+      "style",
+      ".copyright",
+      ".article_relation",
+      ".vod_player_wrap"
+    ]
+  },
+  "ui": {
+    "show_progress": true,
+    "confirm_before_start": true,
+    "confirm_before_extraction": true,
+    "default_period": "1w",
+    "default_sort": "relevance",
+    "default_news_type": "all",
+    "show_detailed_logs": false
+  },
+  "advanced": {
+    "session_management": {
+      "enable_cookie_persistence": true,
+      "session_refresh_interval": 300,
+      "max_sessions_pool": 3
+    },
+    "anti_403": {
+      "enable_progressive_backoff": true,
+      "max_backoff_seconds": 120,
+      "enable_proxy_rotation": false,
+      "proxy_list": []
+    },
+    "duplicate_management": {
+      "enable_persistent_storage": false,
+      "storage_type": "sqlite",
+      "enable_content_hash": false
+    }
+  }
+}
