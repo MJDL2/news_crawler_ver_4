@@ -1,7 +1,8 @@
 """
-사용자 인터페이스 모듈
+UI 패키지 초기화
 """
 
 from .cli import CLI
+from .interactive import InteractiveInterface
 
-__all__ = ['CLI']
+__all__ = ['CLI', 'InteractiveInterface']
