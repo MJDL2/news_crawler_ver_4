@@ -11,7 +11,6 @@ from typing import Optional
 from ..core.crawler import NewsCrawler
 from ..utils.config import get_config
 from ..utils.file_saver import FileSaver
-from .interactive import InteractiveInterface
 
 logger = logging.getLogger(__name__)
 
@@ -105,9 +104,6 @@ class CLI:
         if not self.validate_args(args):
             return 1
         
-        # 대화형 모드에서 반환된 옵션 저장
-        interactive_options = None
-        
         # 대화형 모드 처리
         if args.interactive:
             # 대화형 모드에서는 모든 로깅 완전 비활성화
@@ -115,44 +111,46 @@ class CLI:
             for logger_name in logging.root.manager.loggerDict:
                 logging.getLogger(logger_name).handlers = []
             
-            interactive = InteractiveInterface()
-            options = interactive.run()
-            
-            if options is None:
-                print("\n작업이 취소되었습니다.")
-                return 0  # 사용자가 취소함
-            
-            # 대화형 옵션 저장
-            interactive_options = options
-            
-            # 대화형 모드에서 받은 옵션으로 args 업데이트
-            args.query = options['query']
-            args.period = options['period']
-            args.start_date = options.get('start_date')
-            args.end_date = options.get('end_date')
-            args.sort = options['sort']
-            args.type = options['news_type']
-            args.pages = options['max_pages']
-            args.max_urls = options['max_urls']
-            args.url_type = options['url_type']
-            args.extract_content = options['extract_content']
-            args.content_limit = options['content_limit']
-            args.extraction_mode = options['extraction_mode']
-            args.output = options['output']
-            args.url_output = options['url_output']
-            
-            # 지연 시간은 기본값 사용 (대화형 모드에서는 설정하지 않음)
-            if not hasattr(args, 'delay') or args.delay is None:
-                args.delay = 1.0
-            if not hasattr(args, 'content_delay') or args.content_delay is None:
-                args.content_delay = 1.5
-            
-            # 로깅 재활성화 (크롤링용)
-            logging.disable(logging.NOTSET)
-            # 대화형 모드에서는 INFO 레벨로 설정하여 진행 상황 표시
-            logging.getLogger().setLevel(logging.INFO)
+            try:
+                from .interactive import InteractiveInterface
+                interactive = InteractiveInterface()
+                options = interactive.run()
+                
+                if options is None:
+                    print("\n작업이 취소되었습니다.")
+                    return 0  # 사용자가 취소함
+                
+                # 대화형 모드에서 받은 옵션으로 args 업데이트
+                args.query = options['query']
+                args.period = options['period']
+                args.start_date = options.get('start_date')
+                args.end_date = options.get('end_date')
+                args.sort = options['sort']
+                args.type = options['news_type']
+                args.pages = options['max_pages']
+                args.max_urls = options['max_urls']
+                args.url_type = options['url_type']
+                args.extract_content = options['extract_content']
+                args.content_limit = options['content_limit']
+                args.extraction_mode = options['extraction_mode']
+                args.output = options['output']
+                args.url_output = options['url_output']
+                
+                # 지연 시간은 기본값 사용
+                if not hasattr(args, 'delay') or args.delay is None:
+                    args.delay = 1.0
+                if not hasattr(args, 'content_delay') or args.content_delay is None:
+                    args.content_delay = 1.5
+                
+                # 로깅 재활성화 (크롤링용)
+                logging.disable(logging.NOTSET)
+                logging.getLogger().setLevel(logging.INFO)
+                
+            except ImportError:
+                print("대화형 인터페이스를 불러올 수 없습니다.")
+                return 1
         
-        # 로깅 설정 (대화형 모드가 아닌 경우)
+        # 로깅 설정
         if args.verbose and not args.interactive:
             logging.getLogger().setLevel(logging.DEBUG)
         
@@ -165,96 +163,38 @@ class CLI:
         logger.info(f"네이버 뉴스 크롤링 시작: '{args.query}'")
         
         try:
-            # 날짜별 수집 여부 확인 (대화형 모드에서 설정된 경우)
-            if args.interactive and interactive_options and interactive_options.get('_daily_collect'):
-                # 날짜별 수집 모드
-                from ..core.daily_collector import NaverNewsDailyCollector
-                from datetime import datetime, timedelta
-                
-                print("\n날짜별 분할 수집 모드로 진행합니다.")
-                daily_collector = NaverNewsDailyCollector()
-                
-                # 기간 계산
-                if args.period == 'custom' and args.start_date and args.end_date:
-                    start_date = datetime.strptime(args.start_date, '%Y%m%d')
-                    end_date = datetime.strptime(args.end_date, '%Y%m%d')
-                else:
-                    # 기본 기간 설정
-                    end_date = datetime.now()
-                    period_days = {'1w': 7, '1m': 30, '3m': 90, '6m': 180, '1y': 365}
-                    days = period_days.get(args.period, 30)
-                    start_date = end_date - timedelta(days=days)
-                
-                # 날짜별 수집 실행
-                result = daily_collector.collect_date_range(
-                    query=args.query,
-                    start_date=start_date,
-                    end_date=end_date,
-                    sort=args.sort,
-                    news_type=args.type,
-                    extract_content=args.extract_content,
-                    daily_limit=interactive_options.get('_daily_limit', 10),
-                    extraction_mode=args.extraction_mode,
-                    save_intermediate=True
-                )
-                
-                # 결과 출력
-                print("\n===== 날짜별 수집 완료 =====")
-                print(f"검색어: {result['query']}")
-                print(f"기간: {result['start_date']} ~ {result['end_date']}")
-                print(f"총 수집일: {result['total_days']}일")
-                print(f"수집된 URL: {result['total_urls']}개")
-                print(f"추출된 기사: {result['total_contents']}개")
-                
-                if result['daily_results']:
-                    print("\n일별 수집 현황:")
-                    for daily in result['daily_results'][-5:]:  # 최근 5일만 표시
-                        print(f"  {daily['date']}: URL {daily['urls_collected']}개, 본문 {daily['contents_extracted']}개")
-                
-                return 0
-                
-            else:
-                # 기존 크롤링 방식
-                result = self.crawler.crawl(
-                    query=args.query,
-                    period=args.period,
-                    start_date=args.start_date,
-                    end_date=args.end_date,
-                    sort=args.sort,
-                    news_type=args.type,
-                    max_pages=args.pages,
-                    max_urls=args.max_urls,
-                    url_type_filter=args.url_type,
-                    extract_content=args.extract_content,
-                    content_limit=args.content_limit,
-                    extraction_mode=args.extraction_mode,
-                    request_delay=args.delay,
-                    content_delay=args.content_delay
-                )
-                
-                # 결과 저장
-                saved_files = self.file_saver.save_crawl_result(result, args.output)
-                
-                # 결과 출력
-                stats = result.get_stats()
-                print("\n===== 크롤링 완료 =====")
-                print(f"검색어: {stats['query']}")
-                print(f"기간: {stats['period']}")
-                print(f"수집된 URL: {stats['urls_collected']}개")
-                print(f"추출된 기사: {stats['articles_extracted']}개")
-                print(f"소요 시간: {stats['duration_seconds']:.2f}초")
-                
-                if stats['errors_count'] > 0:
-                    print(f"오류 발생: {stats['errors_count']}건")
-                
-                if saved_files['urls']:
-                    print(f"\nURL 저장: {saved_files['urls']}")
-                if saved_files['articles']:
-                    print(f"기사 저장: {len(saved_files['articles'])}개 파일")
-                if saved_files['stats']:
-                    print(f"통계 저장: {saved_files['stats']}")
-                
-                return 0
+            # 크롤링 실행
+            result = self.crawler.crawl(
+                query=args.query,
+                period=args.period,
+                start_date=args.start_date,
+                end_date=args.end_date,
+                sort=args.sort,
+                news_type=args.type,
+                max_pages=args.pages,
+                max_urls=args.max_urls,
+                url_type_filter=args.url_type,
+                extract_content=args.extract_content,
+                content_limit=args.content_limit,
+                extraction_mode=args.extraction_mode,
+                request_delay=args.delay,
+                content_delay=args.content_delay
+            )
+            
+            # 결과 저장
+            saved_files = self.file_saver.save_crawl_result(result, args.output)
+            
+            # 결과 출력
+            print("\n===== 크롤링 완료 =====")
+            print(f"검색어: {result.query}")
+            print(f"기간: {result.period}")
+            print(f"수집된 URL: {len(result.urls)}개")
+            print(f"추출된 기사: {len(result.articles)}개")
+            
+            if result.errors:
+                print(f"오류 발생: {len(result.errors)}건")
+            
+            if saved_files['urls']:
                 print(f"\nURL 저장: {saved_files['urls']}")
             if saved_files['articles']:
                 print(f"기사 저장: {len(saved_files['articles'])}개 파일")
