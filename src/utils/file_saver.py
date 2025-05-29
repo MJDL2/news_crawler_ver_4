@@ -121,18 +121,18 @@ class FileSaver:
         }
         
         # URL 저장
-        if result.collected_urls:
+        if result.urls:
             saved_files["urls"] = self.save_urls(
-                result.collected_urls,
+                result.urls,
                 result.query,
                 result.period,
                 output_dir
             )
         
         # 기사 저장
-        if result.extracted_articles:
+        if result.articles:
             saved_files["articles"] = self.save_articles(
-                result.extracted_articles,
+                result.articles,
                 result.query,
                 result.period,
                 output_dir
@@ -147,24 +147,70 @@ class FileSaver:
     def save_stats(self, result: CrawlResult,
                   output_dir: Optional[str] = None) -> Optional[str]:
         """크롤링 통계 저장"""
-        # 테스트 쿼리인 경우 test_results 디렉토리 사용
         if output_dir is None:
             if result.query.lower() in ['테스트', 'test']:
                 output_dir = os.path.join('data', 'test_results')
             else:
-                output_dir = self.config.storage.news_data_dir
-        stats_dir = os.path.join(output_dir, "stats")
-        os.makedirs(stats_dir, exist_ok=True)
+                output_dir = self.config.storage.root_dir
+        os.makedirs(output_dir, exist_ok=True)
         
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-        filename = f"crawl_stats_{result.query}_{timestamp}.json"
-        filepath = os.path.join(stats_dir, filename)
+        filename = f"stats_{result.query}_{timestamp}.json"
+        filepath = os.path.join(output_dir, filename)
         
         try:
             with open(filepath, 'w', encoding='utf-8') as f:
-                json.dump(result.get_stats(), f, ensure_ascii=False, indent=2)
+                json.dump(result.to_dict(), f, ensure_ascii=False, indent=2)
             logger.info(f"통계 저장 완료: {filepath}")
             return filepath
         except IOError as e:
-            logger.error(f"통계 파일 저장 오류: {e}")
+            logger.error(f"통계 저장 오류: {e}")
             return None
+    
+    def load_urls_from_file(self, filepath: str) -> List[NewsURL]:
+        """파일에서 URL 목록 로드"""
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            
+            urls = []
+            for url_data in data.get('urls', []):
+                url = NewsURL(
+                    url=url_data['url'],
+                    type=url_data['type'],
+                    title=url_data.get('title'),
+                    search_date=url_data.get('search_date')
+                )
+                urls.append(url)
+            
+            logger.info(f"URL {len(urls)}개 로드 완료: {filepath}")
+            return urls
+            
+        except Exception as e:
+            logger.error(f"URL 파일 로드 오류: {e}")
+            return []
+    
+    def load_articles_from_file(self, filepath: str) -> List[NewsArticle]:
+        """파일에서 기사 목록 로드"""
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            
+            articles = []
+            for article_data in data.get('articles', []):
+                article = NewsArticle(
+                    url=article_data['url'],
+                    title=article_data.get('title', ''),
+                    press=article_data.get('press', ''),
+                    date=article_data.get('date', ''),
+                    content=article_data.get('content', ''),
+                    reporter=article_data.get('reporter', '')
+                )
+                articles.append(article)
+            
+            logger.info(f"기사 {len(articles)}개 로드 완료: {filepath}")
+            return articles
+            
+        except Exception as e:
+            logger.error(f"기사 파일 로드 오류: {e}")
+            return []
