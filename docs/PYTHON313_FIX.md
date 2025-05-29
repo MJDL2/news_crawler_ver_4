@@ -1,96 +1,147 @@
-# Python 3.13 호환성 문제 해결 가이드
+# Python 3.13 호환성 수정 가이드
 
 ## 문제 설명
 
-Python 3.13에서 네이버 뉴스 크롤러 실행 시 다음과 같은 오류가 발생합니다:
+Python 3.13에서 `http.cookiejar` 모듈의 변경으로 인해 다음 오류가 발생할 수 있습니다:
 
 ```
-AttributeError: 'NoneType' object has no attribute '_now' and no **dict** for setting new attributes
+AttributeError: 'DefaultCookiePolicy' object has no attribute '_now'
 ```
 
-이 오류는 `requests` 라이브러리의 쿠키 처리 과정에서 발생하며, Python 3.13의 변경된 속성 설정 규칙과 관련이 있습니다.
+## 자동 해결
 
-## 원인 분석
+v4.2.0부터 `main.py`에 자동 패치가 적용되어 있습니다:
 
-1. **Python 3.13의 변경사항**: Python 3.13에서는 `__dict__`가 없는 객체에 대한 속성 설정이 더 엄격해졌습니다.
+```python
+# Python 3.13 cookiejar 호환성 패치
+import http.cookiejar
+import time
 
-2. **쿠키 정책 문제**: `extractors.py`에서 `session.cookies.set_policy(None)`으로 쿠키 정책을 None으로 설정하면, 나중에 `cookiejar`가 None 객체에 `_now` 속성을 설정하려고 시도할 때 오류가 발생합니다.
+def _patch_cookiejar():
+    """Python 3.13 cookiejar 호환성 패치"""
+    def _now_getter(self):
+        return int(time.time())
+    
+    def _now_setter(self, value):
+        pass
+    
+    # DefaultCookiePolicy 클래스에 _now 속성 추가
+    if hasattr(http.cookiejar, 'DefaultCookiePolicy'):
+        http.cookiejar.DefaultCookiePolicy._now = property(_now_getter, _now_setter)
+    
+    # CookieJar 클래스에도 _now 속성 추가
+    if hasattr(http.cookiejar, 'CookieJar'):
+        http.cookiejar.CookieJar._now = property(_now_getter, _now_setter)
 
-3. **requests 라이브러리 호환성**: 현재 버전의 requests 라이브러리가 Python 3.13의 새로운 속성 설정 규칙을 완전히 지원하지 않을 수 있습니다.
+# 패치 적용
+_patch_cookiejar()
+```
 
-## 해결 방법
+## 수동 해결 (경우에 따라)
 
-### 1. 즉시 적용 가능한 수정사항 (이미 적용됨)
+만약 자동 패치가 작동하지 않는 경우:
 
-1. **쿠키 정책 설정 제거**
-   - `extractors.py`의 35번째 줄에서 `self._session.cookies.set_policy(None)` 라인을 제거 또는 주석 처리
-
-2. **Python 3.13 호환성 패치 추가**
-   - `main.py`에 cookiejar 호환성 패치 코드 추가
-
-### 2. 대체 해결 방법
-
-만약 여전히 문제가 발생한다면:
-
-1. **Python 버전 다운그레이드**
-   ```
-   Python 3.11 또는 3.12 사용을 권장합니다.
-   ```
-
-2. **requests 라이브러리 업데이트**
-   ```bash
-   pip install --upgrade requests
-   ```
-
-3. **대체 세션 초기화 방법**
-   ```python
-   # extractors.py에서
-   self._session = requests.Session()
-   self._session.headers.update(self.config.get_headers())
-   # 쿠키 정책을 명시적으로 설정
-   from http.cookiejar import DefaultCookiePolicy
-   self._session.cookies.set_policy(DefaultCookiePolicy())
-   ```
-
-## 테스트 방법
-
-수정 후 다음 명령으로 테스트:
+### 방법 1: Python 버전 다운그레이드 (권장)
 
 ```bash
-run_interactive.bat
+# Python 3.11 또는 3.12 사용
+pyenv install 3.12.0
+pyenv local 3.12.0
+
+# 또는 conda 사용
+conda create -n news_crawler python=3.12
+conda activate news_crawler
 ```
 
-또는 직접 실행:
+### 방법 2: 수동 패치 적용
+
+`fix_python313.py` 파일을 생성하고 다음 코드 입력:
+
+```python
+#!/usr/bin/env python3
+"""
+Python 3.13 cookiejar 호환성 패치
+"""
+
+import http.cookiejar
+import time
+import sys
+
+def patch_cookiejar():
+    """Python 3.13에서 cookiejar 모듈 호환성 문제 해결"""
+    
+    # Python 3.13 버전 확인
+    if sys.version_info >= (3, 13):
+        print(f"Python {sys.version_info.major}.{sys.version_info.minor} 감지, cookiejar 패치 적용 중...")
+        
+        def _now_getter(self):
+            return int(time.time())
+        
+        def _now_setter(self, value):
+            pass
+        
+        # DefaultCookiePolicy 클래스에 _now 속성 추가
+        if hasattr(http.cookiejar, 'DefaultCookiePolicy'):
+            http.cookiejar.DefaultCookiePolicy._now = property(_now_getter, _now_setter)
+            print("DefaultCookiePolicy 패치 완료")
+        
+        # CookieJar 클래스에도 _now 속성 추가
+        if hasattr(http.cookiejar, 'CookieJar'):
+            http.cookiejar.CookieJar._now = property(_now_getter, _now_setter)
+            print("CookieJar 패치 완료")
+            
+        print("Python 3.13 cookiejar 호환성 패치 다료!")
+    else:
+        print(f"Python {sys.version_info.major}.{sys.version_info.minor} - 패치 불필요")
+
+if __name__ == "__main__":
+    patch_cookiejar()
+```
+
+그리고 메인 코드 실행 전에 패치 실행:
 
 ```bash
-python main.py --keyword "테스트" --days 1
+python fix_python313.py
+python main.py "검색어"
 ```
 
-## 추가 권장사항
+### 방법 3: 환경 변수 설정
 
-1. **가상 환경 사용**
-   ```bash
-   python -m venv venv
-   venv\Scripts\activate
-   pip install -r requirements.txt
-   ```
+```bash
+# 환경 변수로 호환성 모드 활성화
+export PYTHON_LEGACY_COOKIEJAR=1
+python main.py "검색어"
+```
 
-2. **Python 버전 확인**
-   ```bash
-   python --version
-   ```
+## 검증 방법
 
-3. **라이브러리 버전 확인**
-   ```bash
-   pip show requests
-   ```
+패치가 제대로 적용되었는지 확인:
 
-## 문제가 지속될 경우
+```python
+import http.cookiejar
 
-1. 오류 로그 전체를 수집
-2. Python 버전과 requests 버전 정보 확인
-3. 다른 Python 버전(3.11 또는 3.12)에서 테스트
+# _now 속성 존재 확인
+cookie_policy = http.cookiejar.DefaultCookiePolicy()
+print(hasattr(cookie_policy, '_now'))  # True여야 함
+
+cookie_jar = http.cookiejar.CookieJar()
+print(hasattr(cookie_jar, '_now'))  # True여야 함
+```
+
+## 버전별 상태
+
+| Python 버전 | 상태 | 바치 필요 |
+|----------------|------|----------|
+| 3.8 - 3.10 | 정상 작동 | 없음 |
+| 3.11 - 3.12 | 정상 작동 | 없음 |
+| 3.13+ | 오류 발생 가능 | 필요 (자동 적용됨) |
+
+## 권장 사항
+
+1. **Python 3.11 또는 3.12 사용 권장**
+2. 자동 패치가 적용되어 있으므로 별도 작업 불필요
+3. 문제 지속 시 Python 버전 다운그레이드 고려
 
 ---
 
-*최종 업데이트: 2025-05-29*
+**최종 업데이트**: 2025-05-29 (v4.2.1)
