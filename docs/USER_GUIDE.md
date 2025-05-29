@@ -1,5 +1,37 @@
 # 네이버 뉴스 크롤러 v4 - 사용자 가이드
 
+## 🚨 중요: 안전한 실행 방법 (v4.2.1)
+
+### ❌ 피해야 할 실행 방법
+```bash
+python main.py --help          # 무한 대기 상태 발생
+python main.py -h              # 무한 대기 상태 발생
+```
+
+### ✅ 권장 실행 방법
+
+#### 1순위: Windows 배치 파일 사용 (가장 안전)
+```bash
+run_interactive_v2.bat         # 대화형 모드 (권장)
+run_safe_mode.bat             # 안전 모드 (403 방지)
+```
+
+#### 2순위: PowerShell 스크립트
+```powershell
+.\run_interactive.ps1         # PowerShell 대화형
+.\run_with_proxy.ps1         # PowerShell 프록시 모드
+```
+
+#### 3순위: 직접 실행 (완전한 옵션 제공 시에만)
+```bash
+python main.py -i             # 대화형 모드로 직접 진입
+python main.py -q "검색어" --extract-content --period 1w  # 완전한 인자 제공
+```
+
+⚠️ **주의**: CLI help 시스템에 버그가 있어 불완전한 명령어 실행 시 무한 대기 상태가 될 수 있습니다.
+
+---
+
 ## 목차
 
 1. [설치 및 설정](#1-설치-및-설정)

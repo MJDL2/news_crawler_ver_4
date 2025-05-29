@@ -96,7 +96,7 @@ run_with_proxy.bat  # 프록시 주소 설정 필요
 
 더 많은 옵션은 `python main.py --help` 참조
 
-## 프로젝트 구조
+## 프로젝트 구조 (실제 검증됨 - 2025.05.29)
 
 ```
 news_crawler_ver_4/
@@ -110,40 +110,48 @@ news_crawler_ver_4/
 │   │   ├── news.py             # 뉴스 데이터 클래스
 │   │   └── search_options.py   # 검색 옵션 클래스
 │   ├── ui/         # 사용자 인터페이스
-│   │   ├── cli.py              # 명령줄 인터페이스
+│   │   ├── cli.py              # 명령줄 인터페이스 ⚠️
 │   │   └── interactive.py      # 대화형 인터페이스
 │   └── utils/      # 유틸리티
 │       ├── config.py           # 설정 관리
 │       ├── file_saver.py       # 파일 저장 유틸리티
 │       ├── balanced_extractor.py # 균등 추출 알고리즘
-│       ├── session_pool.py     # 세션 풀 관리 (v4.2)
-│       └── monitoring.py       # 모니터링 도구 (v4.2)
+│       └── session_pool.py     # 세션 풀 관리 (v4.2)
 ├── data/           # 수집 데이터 저장
 │   ├── news_data/  # 추출된 뉴스 본문
 │   ├── url_data/   # 수집된 URL 목록
-│   └── temp/       # 임시 파일 (v4.2)
-├── dev/            # 개발 관련 파일
-│   └── analysis/   # 구조 분석 스크립트
+│   ├── test_results/ # 테스트 결과
+│   └── temp/       # 임시 파일
 ├── docs/           # 프로젝트 문서
-│   ├── issues/     # 이슈 및 문제 분석 (v4.2.1)
 │   ├── ARCHITECTURE.md     # 아키텍처 설계
 │   ├── DEVELOPMENT.md      # 개발 가이드
 │   ├── PROGRESS.md         # 진행 상황
 │   ├── USER_GUIDE.md       # 사용자 가이드
+│   ├── CHANGELOG.md        # 변경 이력
 │   ├── 403_ERROR_GUIDE.md  # 403 오류 해결
-│   └── PYTHON313_FIX.md    # Python 3.13 호환성
+│   ├── PYTHON313_FIX.md    # Python 3.13 호환성
+│   └── IMPROVEMENTS_v4.2.0.md # v4.2.0 개선사항
 ├── tests/          # 테스트 코드
-├── test_scripts/   # 테스트 스크립트 (v4.2)
+├── test_scripts/   # 테스트 스크립트
 ├── config.json     # 레거시 설정 파일
 ├── crawler_config.json # 크롤링 설정 파일
 ├── unified_config.json # 통합 설정 파일 (v4.2 권장)
 ├── main.py         # 진입점
 ├── requirements.txt # 의존성 패키지
-├── run_interactive_v2.bat # Windows 대화형 실행
+├── run_interactive_v2.bat # Windows 대화형 실행 (권장)
 ├── run_safe_mode.bat     # 403 오류 대응 모드
 ├── run_with_proxy.bat    # 프록시 실행 모드
 └── run_interactive.ps1   # PowerShell 실행 스크립트
 ```
+
+## ⚠️ 알려진 문제 (v4.2.1)
+
+**CLI 실행 주의사항**: `python main.py --help` 명령이 무한 대기 상태가 됩니다.
+
+**권장 실행 방법**:
+- `run_interactive_v2.bat` (Windows 배치파일)
+- `python main.py -i` (대화형 모드 직접 진입)
+- `.\run_interactive.ps1` (PowerShell 스크립트)
 
 ## 문서
 
