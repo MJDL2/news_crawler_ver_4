@@ -208,15 +208,18 @@ class NaverNewsDailyCollector:
         }
         search_option.set_news_type(type_map.get(news_type, NaverNewsSearchOption.TYPE_ALL))
         
-        # URL 수집
+        # URL 수집 - daily_limit을 URL 수집에도 적용
         url_file = None
         if save_intermediate:
             url_file = os.path.join(self.temp_dir, f"urls_{query}_{date_str}.json")
         
+        # daily_limit이 있으면 URL 수집도 해당 개수로 제한
+        max_urls_to_collect = daily_limit if daily_limit > 0 else 0
+        
         urls = self.url_extractor.collect_from_search(
             search_url=search_option.build_url(),
             max_pages=0,  # 무제한
-            max_urls=daily_limit if daily_limit > 0 else 0,  # daily_limit이 있으면 사용
+            max_urls=max_urls_to_collect,
             delay_sec=self.config.crawling.delay_between_requests
         )
         
@@ -239,11 +242,10 @@ class NaverNewsDailyCollector:
             if save_intermediate:
                 content_file = os.path.join(self.temp_dir, f"contents_{query}_{date_str}.json")
             
-            # 추출할 URL 선택
-            urls_to_extract = urls[:daily_limit] if daily_limit > 0 else urls
+            # URL이 이미 daily_limit으로 제한되어 있으므로 모든 URL에서 본문 추출
             contents = []
             
-            for i, url in enumerate(urls_to_extract):
+            for i, url in enumerate(urls):
                 if i > 0:
                     time.sleep(self.config.crawling.delay_between_requests)
                     
@@ -296,6 +298,154 @@ class NaverNewsDailyCollector:
         logger.info(f"수집 통계 저장: {stats_file}")
     
     def _merge_daily_contents(self, stats: Dict[str, Any], content_limit: int, extraction_mode: str):
-        """일별 수집된 컨텐츠를 병합"""
-        # TODO: 구현 필요
-        pass
+        """
+        일별 수집된 컨텐츠를 병합
+        
+        Args:
+            stats: 수집 통계 정보
+            content_limit: 최종 병합할 컨텐츠 개수 제한
+            extraction_mode: 병합 방식 ('sequential', 'even_distribution', 'recent_first')
+        """
+        logger.info(f"컨텐츠 병합 시작: {content_limit}개, 방식: {extraction_mode}")
+        print(f"\n컨텐츠 병합 중... (최대 {content_limit}개, 방식: {extraction_mode})")
+        
+        # 모든 일별 컨텐츠 파일 수집
+        all_contents = []
+        content_files = []
+        
+        for daily_result in stats['daily_results']:
+            if daily_result.get('status') == 'success' and daily_result.get('content_file'):
+                content_file = daily_result['content_file']
+                date = daily_result['date']
+                
+                if os.path.exists(content_file):
+                    try:
+                        with open(content_file, 'r', encoding='utf-8') as f:
+                            daily_contents = json.load(f)
+                            
+                        # 각 컨텐츠에 날짜 정보 추가
+                        for content in daily_contents:
+                            content['collection_date'] = date
+                            all_contents.append(content)
+                        
+                        content_files.append(content_file)
+                        logger.info(f"날짜 {date}: {len(daily_contents)}개 컨텐츠 로드")
+                        
+                    except Exception as e:
+                        logger.error(f"컨텐츠 파일 {content_file} 로드 실패: {e}")
+        
+        if not all_contents:
+            logger.warning("병합할 컨텐츠가 없습니다.")
+            print("  병합할 컨텐츠가 없습니다.")
+            return
+        
+        logger.info(f"총 {len(all_contents)}개 컨텐츠 수집됨")
+        print(f"  총 {len(all_contents)}개 컨텐츠 수집됨")
+        
+        # 병합 방식에 따른 컨텐츠 선택
+        selected_contents = self._select_contents_by_mode(all_contents, content_limit, extraction_mode)
+        
+        # 최종 파일 저장
+        merged_filename = f"merged_contents_{stats['query']}_{stats['start_date']}_{stats['end_date']}_{datetime.now().strftime('%H%M%S')}.json"
+        merged_file = os.path.join(self.config.storage.news_data_dir, merged_filename)
+        
+        with open(merged_file, 'w', encoding='utf-8') as f:
+            json.dump(selected_contents, f, ensure_ascii=False, indent=2)
+        
+        logger.info(f"병합 완료: {len(selected_contents)}개 컨텐츠 → {merged_file}")
+        print(f"  병합 완료: {len(selected_contents)}개 컨텐츠")
+        print(f"  저장 위치: {merged_file}")
+        
+        # 통계 업데이트
+        stats['merged_file'] = merged_file
+        stats['merged_contents'] = len(selected_contents)
+        
+        # 임시 파일 정리 (선택사항)
+        if hasattr(self.config, 'cleanup_temp_files') and self.config.cleanup_temp_files:
+            self._cleanup_temp_files(content_files)
+    
+    def _select_contents_by_mode(self, all_contents: List[Dict], content_limit: int, extraction_mode: str) -> List[Dict]:
+        """
+        병합 방식에 따라 컨텐츠 선택
+        
+        Args:
+            all_contents: 모든 컨텐츠 리스트
+            content_limit: 선택할 컨텐츠 개수
+            extraction_mode: 선택 방식
+            
+        Returns:
+            선택된 컨텐츠 리스트
+        """
+        if len(all_contents) <= content_limit:
+            return all_contents
+        
+        if extraction_mode == 'sequential':
+            # 순차적 선택 (날짜 순서대로)
+            return all_contents[:content_limit]
+            
+        elif extraction_mode == 'recent_first':
+            # 최신 날짜 우선 선택
+            all_contents.sort(key=lambda x: x.get('collection_date', ''), reverse=True)
+            return all_contents[:content_limit]
+            
+        elif extraction_mode == 'even_distribution':
+            # 날짜별 균등 분배
+            return self._distribute_evenly_by_date(all_contents, content_limit)
+            
+        else:
+            # 기본값: sequential
+            logger.warning(f"알 수 없는 추출 방식 '{extraction_mode}', sequential 방식 사용")
+            return all_contents[:content_limit]
+    
+    def _distribute_evenly_by_date(self, all_contents: List[Dict], content_limit: int) -> List[Dict]:
+        """
+        날짜별로 균등하게 컨텐츠 분배
+        
+        Args:
+            all_contents: 모든 컨텐츠 리스트
+            content_limit: 선택할 컨텐츠 개수
+            
+        Returns:
+            균등 분배된 컨텐츠 리스트
+        """
+        # 날짜별로 그룹화
+        date_groups = {}
+        for content in all_contents:
+            date = content.get('collection_date', 'unknown')
+            if date not in date_groups:
+                date_groups[date] = []
+            date_groups[date].append(content)
+        
+        dates = sorted(date_groups.keys())
+        total_dates = len(dates)
+        
+        # 날짜별 할당량 계산
+        base_quota = content_limit // total_dates
+        extra_quota = content_limit % total_dates
+        
+        selected_contents = []
+        
+        for i, date in enumerate(dates):
+            # 이 날짜의 할당량
+            quota = base_quota + (1 if i < extra_quota else 0)
+            
+            # 해당 날짜의 컨텐츠에서 선택
+            date_contents = date_groups[date]
+            selected_from_date = date_contents[:quota] if len(date_contents) >= quota else date_contents
+            selected_contents.extend(selected_from_date)
+        
+        logger.info(f"균등 분배 완료: {total_dates}개 날짜에서 {len(selected_contents)}개 선택")
+        return selected_contents
+    
+    def _cleanup_temp_files(self, file_list: List[str]):
+        """임시 파일 정리"""
+        cleaned_count = 0
+        for file_path in file_list:
+            try:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                    cleaned_count += 1
+            except Exception as e:
+                logger.warning(f"임시 파일 {file_path} 삭제 실패: {e}")
+        
+        logger.info(f"임시 파일 {cleaned_count}개 정리 완료")

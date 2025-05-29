@@ -66,6 +66,21 @@ class InteractiveInterface:
             end_date = self.get_input("종료일 (YYYYMMDD)")
             if end_date is None:
                 return None
+            
+            # 날짜별 수집 안내
+            try:
+                from datetime import datetime
+                start_dt = datetime.strptime(start_date, '%Y%m%d')
+                end_dt = datetime.strptime(end_date, '%Y%m%d')
+                date_diff = (end_dt - start_dt).days
+                
+                if date_diff >= 1:
+                    print(f"\n*** 알림: {date_diff + 1}일간의 기간이 설정되어 날짜별 수집 모드가 사용됩니다 ***")
+                    print("각 날짜별로 개별 검색하여 지정된 개수만큼 수집합니다.")
+                    
+            except ValueError:
+                print("날짜 형식을 확인해주세요 (YYYYMMDD)")
+                return None
         
         sort = self.get_input("정렬 방식", "relevance", ["relevance", "recent", "oldest"])
         if sort is None:
@@ -112,6 +127,22 @@ class InteractiveInterface:
                 content_limit = int(content_limit)
             except ValueError:
                 content_limit = 20
+            
+            # custom 기간에서 날짜별 수집 모드일 때 안내
+            if period == "custom" and start_date and end_date:
+                try:
+                    from datetime import datetime
+                    start_dt = datetime.strptime(start_date, '%Y%m%d')
+                    end_dt = datetime.strptime(end_date, '%Y%m%d')
+                    date_diff = (end_dt - start_dt).days
+                    
+                    if date_diff >= 1:
+                        print(f"\n*** 날짜별 수집 모드 ***")
+                        print(f"각 날짜별로 최대 {content_limit}개씩 수집됩니다.")
+                        print(f"총 예상 수집량: 최대 {content_limit * (date_diff + 1)}개")
+                        
+                except ValueError:
+                    pass
             
             extraction_mode = self.get_input("추출 방식", "balanced", ["sequential", "balanced"])
             if extraction_mode is None:
