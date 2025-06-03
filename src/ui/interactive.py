@@ -120,15 +120,16 @@ class InteractiveInterface:
         extraction_mode = "balanced"
         
         if extract_content:
-            content_limit = self.get_input("본문 추출 개수 (0=전체)", "20")
+            content_limit = self.get_input("병합시 최종 추출 개수 (0=전체)", "0")
             if content_limit is None:
                 return None
             try:
                 content_limit = int(content_limit)
             except ValueError:
-                content_limit = 20
+                content_limit = 0
             
             # custom 기간에서 날짜별 수집 모드일 때 안내
+            daily_limit = 0  # 기본값 설정
             if period == "custom" and start_date and end_date:
                 try:
                     from datetime import datetime
@@ -138,8 +139,28 @@ class InteractiveInterface:
                     
                     if date_diff >= 1:
                         print(f"\n*** 날짜별 수집 모드 ***")
-                        print(f"각 날짜별로 최대 {content_limit}개씩 수집됩니다.")
-                        print(f"총 예상 수집량: 최대 {content_limit * (date_diff + 1)}개")
+                        print(f"검색 기간: {date_diff + 1}일 ({start_date} ~ {end_date})")
+                        print(f"날짜별로 URL을 수집하고 본문을 추출합니다.")
+                        
+                        # 일별 수집 제한 입력
+                        daily_limit = self.get_input("일별 최대 수집 개수", "30")
+                        if daily_limit is None:
+                            return None
+                        try:
+                            daily_limit = int(daily_limit)
+                        except ValueError:
+                            daily_limit = 30
+                        
+                        print(f"\n예상 수집량:")
+                        print(f"  - 일별 최대: {daily_limit}개")
+                        print(f"  - 전체 최대: {daily_limit * (date_diff + 1)}개")
+                        
+                        if content_limit > 0:
+                            print(f"  - 병합시 최종: {content_limit}개로 제한")
+                        else:
+                            print(f"  - 병합시: 전체 포함")
+                    else:
+                        daily_limit = 0
                         
                 except ValueError:
                     pass
@@ -172,7 +193,9 @@ class InteractiveInterface:
         print(f"URL 유형: {url_type}")
         print(f"본문 추출: {'예' if extract_content else '아니오'}")
         if extract_content:
-            print(f"추출 개수: {content_limit}")
+            if 'daily_limit' in locals() and daily_limit > 0:
+                print(f"일별 수집: {daily_limit}개")
+            print(f"병합시 제한: {content_limit if content_limit > 0 else '전체'}")
             print(f"추출 방식: {extraction_mode}")
         print(f"저장 위치: {output}")
         
@@ -194,5 +217,6 @@ class InteractiveInterface:
             'content_limit': content_limit,
             'extraction_mode': extraction_mode,
             'output': output,
-            'url_output': url_output
+            'url_output': url_output,
+            'daily_limit': daily_limit if 'daily_limit' in locals() else 0
         }

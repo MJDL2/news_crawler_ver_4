@@ -307,7 +307,10 @@ class NaverNewsDailyCollector:
             extraction_mode: 병합 방식 ('sequential', 'even_distribution', 'recent_first')
         """
         logger.info(f"컨텐츠 병합 시작: {content_limit}개, 방식: {extraction_mode}")
-        print(f"\n컨텐츠 병합 중... (최대 {content_limit}개, 방식: {extraction_mode})")
+        if content_limit > 0:
+            print(f"\n컨텐츠 병합 중... (최대 {content_limit}개, 방식: {extraction_mode})")
+        else:
+            print(f"\n컨텐츠 병합 중... (전체, 방식: {extraction_mode})")
         
         # 모든 일별 컨텐츠 파일 수집
         all_contents = []
@@ -376,7 +379,8 @@ class NaverNewsDailyCollector:
         Returns:
             선택된 컨텐츠 리스트
         """
-        if len(all_contents) <= content_limit:
+        # content_limit이 0이면 전체 반환
+        if content_limit <= 0 or len(all_contents) <= content_limit:
             return all_contents
         
         if extraction_mode == 'sequential':
@@ -388,8 +392,8 @@ class NaverNewsDailyCollector:
             all_contents.sort(key=lambda x: x.get('collection_date', ''), reverse=True)
             return all_contents[:content_limit]
             
-        elif extraction_mode == 'even_distribution':
-            # 날짜별 균등 분배
+        elif extraction_mode == 'even_distribution' or extraction_mode == 'balanced':
+            # 날짜별 균등 분배 (balanced는 even_distribution의 별칭)
             return self._distribute_evenly_by_date(all_contents, content_limit)
             
         else:

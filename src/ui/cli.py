@@ -152,6 +152,7 @@ class CLI:
                 args.extraction_mode = options['extraction_mode']
                 args.output = options['output']
                 args.url_output = options['url_output']
+                args.daily_limit = options.get('daily_limit', 30)  # daily_limit 추가
                 
                 # 지연 시간은 기본값 사용
                 if not hasattr(args, 'delay') or args.delay is None:
@@ -256,7 +257,7 @@ class CLI:
         end_dt = datetime.strptime(args.end_date, '%Y%m%d')
         
         # 일별 제한 개수 계산
-        daily_limit = args.content_limit if args.content_limit > 0 else 10
+        daily_limit = args.daily_limit if hasattr(args, 'daily_limit') and args.daily_limit > 0 else 30
         
         print(f"날짜별 수집 모드 실행")
         print(f"  기간: {args.start_date} ~ {args.end_date}")
