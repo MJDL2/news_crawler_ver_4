@@ -6,6 +6,7 @@
 
 import argparse
 import logging
+import sys
 from typing import Optional
 from datetime import datetime
 
@@ -20,10 +21,17 @@ class CLI:
     """명령줄 인터페이스"""
     
     def __init__(self):
-        self.crawler = NewsCrawler()
-        self.daily_collector = NaverNewsDailyCollector()
-        self.file_saver = FileSaver()
-        self.config = get_config()
+        # --help 옵션이 있으면 초기화를 최소화
+        if '--help' in sys.argv or '-h' in sys.argv:
+            self.crawler = None
+            self.daily_collector = None
+            self.file_saver = None
+            self.config = None
+        else:
+            self.crawler = NewsCrawler()
+            self.daily_collector = NaverNewsDailyCollector()
+            self.file_saver = FileSaver()
+            self.config = get_config()
     
     def parse_arguments(self) -> argparse.Namespace:
         """명령행 인자 파싱"""

@@ -9,23 +9,36 @@ import os
 import platform
 import locale
 
-# Windows에서 버퍼링 문제 해결
-if platform.system() == 'Windows':
-    # UTF-8 코드 페이지 설정
-    os.system('chcp 65001 > nul 2>&1')
-    
-    # 환경 변수 설정
-    os.environ['PYTHONIOENCODING'] = 'utf-8'
-    os.environ['PYTHONUNBUFFERED'] = '1'
-    
-    # 로케일 설정
-    try:
-        locale.setlocale(locale.LC_ALL, 'ko_KR.UTF-8')
-    except:
+# --help 옵션 확인 (Windows 설정 전에 처리)
+if '--help' in sys.argv or '-h' in sys.argv:
+    # --help 옵션이 있으면 Windows 설정을 건너뛰고 바로 argparse로 전달
+    pass
+else:
+    # Windows에서 버퍼링 문제 해결
+    if platform.system() == 'Windows':
+        # UTF-8 코드 페이지 설정
         try:
-            locale.setlocale(locale.LC_ALL, '')
+            # subprocess 대신 ctypes 사용하여 코드 페이지 설정
+            import ctypes
+            kernel32 = ctypes.windll.kernel32
+            kernel32.SetConsoleCP(65001)
+            kernel32.SetConsoleOutputCP(65001)
         except:
-            pass
+            # fallback to os.system if ctypes fails
+            os.system('chcp 65001 > nul 2>&1')
+        
+        # 환경 변수 설정
+        os.environ['PYTHONIOENCODING'] = 'utf-8'
+        os.environ['PYTHONUNBUFFERED'] = '1'
+        
+        # 로케일 설정
+        try:
+            locale.setlocale(locale.LC_ALL, 'ko_KR.UTF-8')
+        except:
+            try:
+                locale.setlocale(locale.LC_ALL, '')
+            except:
+                pass
 
 import logging
 
@@ -53,14 +66,20 @@ def _patch_cookiejar():
 _patch_cookiejar()
 from src.ui.cli import main as cli_main
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    encoding='utf-8'
-)
+# --help가 아닌 경우에만 로깅 설정
+if '--help' not in sys.argv and '-h' not in sys.argv:
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        encoding='utf-8'
+    )
 
 def main():
     """메인 함수"""
+    # --help 옵션이 있으면 로깅 설정을 건너뛰고 바로 CLI 실행
+    if '--help' in sys.argv or '-h' in sys.argv:
+        return cli_main()
+    
     # 대화형 모드인지 확인
     if len(sys.argv) > 1 and sys.argv[1] in ['-i', '--interactive']:
         # 대화형 모드에서는 로깅 완전 비활성화
