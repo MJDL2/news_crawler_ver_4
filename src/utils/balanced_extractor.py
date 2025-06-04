@@ -7,7 +7,6 @@
 import logging
 from typing import List, Dict, Any
 import random
-from datetime import datetime
 
 logger = logging.getLogger('balanced_extractor')
 
