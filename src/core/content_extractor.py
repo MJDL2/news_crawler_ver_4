@@ -4,9 +4,8 @@
 네이버 뉴스 URL에서 본문 내용을 추출하는 기능을 제공합니다.
 """
 
-import re
 import logging
-from typing import Dict, List, Optional, Union
+import re
 from bs4 import BeautifulSoup
 
 from .extractors import URLExtractor

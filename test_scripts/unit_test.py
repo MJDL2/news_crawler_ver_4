@@ -4,7 +4,6 @@
 네트워크 요청 없는 단위 테스트
 """
 
-import pytest
 from datetime import datetime, timedelta
 
 def test_import():
@@ -34,3 +33,4 @@ if __name__ == '__main__':
     test_instantiation() 
     test_date_range_calculation()
     print("All unit tests passed!")
+

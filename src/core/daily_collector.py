@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 import time
 import random
 import json
-from typing import List, Dict, Tuple, Optional, Any
+from typing import Any, Dict, List
 
 # tqdm 프로그레스 바 지원
 try:

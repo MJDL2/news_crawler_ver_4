@@ -5,11 +5,9 @@
 """
 
 import logging
-import time
 import random
-from typing import List, Optional, Dict, Any
-from datetime import datetime
-from tqdm import tqdm
+import time
+from typing import List, Optional
 
 from .extractors import NaverNewsURLExtractor
 from .content_extractor import NaverNewsContentExtractor
@@ -213,3 +211,4 @@ class NewsCrawler:
             selected.append(urls[index])
         
         return selected
+

@@ -4,9 +4,6 @@
 날짜별 수집기 테스트 스크립트
 """
 
-import sys
-import os
-
 # 패키지가 설치되었으므로 직접 import
 from src.core.daily_collector import NaverNewsDailyCollector
 from datetime import datetime, timedelta
