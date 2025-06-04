@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="news_crawler_ver_4",
-    version="4.2.5",
+    version="4.2.7",
     description="News crawler system with anti-403 features and multiple extraction methods",
     packages=find_packages(),
     python_requires=">=3.8",

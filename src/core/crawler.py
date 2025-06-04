@@ -72,11 +72,11 @@ class NewsCrawler:
             )
             search_url = search_option.build_url()
             logger.info(f"검색 URL: {search_url}")
-            print(f"\n검색 URL 생성 완료")
+            logger.info("검색 URL 생성 완료")
             
             # URL 수집
             logger.info("URL 수집 시작...")
-            print(f"\nURL 수집 중...")
+            logger.info("URL 수집 중...")
             start_time = time.time()
             collected_urls = self.url_extractor.collect_from_search(
                 search_url,
@@ -91,13 +91,14 @@ class NewsCrawler:
                 result.add_url(url)
             
             elapsed = time.time() - start_time
-            logger.info(f"URL {len(collected_urls)}개 수집 완료")
-            print(f"[완료] URL {len(collected_urls)}개 수집 완료 (소요시간: {elapsed:.1f}초)")
+            logger.info(f"URL {len(collected_urls)}개 수집 완료 (소요시간: {elapsed:.1f}초)")
             
             # 본문 추출
             if extract_content and collected_urls:
                 logger.info("본문 추출 시작...")
-                print(f"\n본문 추출 시작 (총 {len(collected_urls)}개 중 {content_limit if content_limit > 0 else '전체'} 추출)")
+                logger.info(
+                    f"본문 추출 시작 (총 {len(collected_urls)}개 중 {content_limit if content_limit > 0 else '전체'} 추출)"
+                )
                 
                 extracted_articles = self._extract_contents(
                     collected_urls,
@@ -110,7 +111,6 @@ class NewsCrawler:
                     result.add_article(article)
                 
                 logger.info(f"본문 {len(extracted_articles)}개 추출 완료")
-                print(f"\n[완료] 본문 {len(extracted_articles)}개 추출 완료")
             
         except Exception as e:
             logger.error(f"크롤링 중 오류 발생: {e}", exc_info=True)
@@ -187,7 +187,9 @@ class NewsCrawler:
                 time.sleep(delay_sec + random.uniform(0, 0.5))
             
             logger.info(f"본문 추출 중 ({i+1}/{len(urls_to_extract)}): {url_obj.url}")
-            print(f"  본문 추출 중 ({i+1}/{len(urls_to_extract)})...", end='\r', flush=True)
+            logger.info(
+                f"  본문 추출 중 ({i+1}/{len(urls_to_extract)})"
+            )
             article = self.content_extractor.extract_news_content(url_obj.url)
             
             if article.is_valid():

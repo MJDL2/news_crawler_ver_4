@@ -5,7 +5,10 @@
 
 import os
 import json
+import logging
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 # 프로젝트 루트 디렉토리
 project_root = r"C:\Users\xxxwj\Documents\GitHub\news_crawler_ver_4"
@@ -38,10 +41,10 @@ def merge_all_contents(keyword, start_date, end_date):
                         all_contents.append(content)
                     
                     date_count[date_str] = len(contents)
-                    print(f"  {date_str}: {len(contents)}개 로드")
+                    logger.info(f"  {date_str}: {len(contents)}개 로드")
                     
             except Exception as e:
-                print(f"  파일 {filename} 로드 실패: {e}")
+                logger.warning(f"  파일 {filename} 로드 실패: {e}")
     
     # 날짜순으로 정렬
     all_contents.sort(key=lambda x: x.get('collection_date', ''))
@@ -54,35 +57,35 @@ def merge_all_contents(keyword, start_date, end_date):
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump(all_contents, f, ensure_ascii=False, indent=2)
     
-    print(f"\n병합 완료:")
-    print(f"  총 {len(all_contents)}개 기사")
-    print(f"  저장 위치: {output_path}")
+    logger.info("병합 완료:")
+    logger.info(f"  총 {len(all_contents)}개 기사")
+    logger.info(f"  저장 위치: {output_path}")
     
-    print(f"\n날짜별 분포:")
+    logger.info("날짜별 분포:")
     for date in sorted(date_count.keys()):
-        print(f"  {date}: {date_count[date]}개")
+        logger.info(f"  {date}: {date_count[date]}개")
     
     return output_path, len(all_contents)
 
 def main():
-    print("=== 전체 일별 수집 파일 병합 ===\n")
+    logger.info("=== 전체 일별 수집 파일 병합 ===")
     
     # 방산 키워드 병합
-    print("방산 키워드 병합 중...")
+    logger.info("방산 키워드 병합 중...")
     merge_all_contents("방산", "20250520", "20250603")
     
-    print("\n" + "="*50 + "\n")
+    logger.info("="*50)
     
     # 원전 키워드도 있다면 병합
     if any(f.startswith("contents_원전_") for f in os.listdir(temp_dir)):
-        print("원전 키워드 병합 중...")
+        logger.info("원전 키워드 병합 중...")
         merge_all_contents("원전", "20250520", "20250529")
     
-    print("\n" + "="*50 + "\n")
+    logger.info("="*50)
     
     # 조선 키워드도 있다면 병합
     if any(f.startswith("contents_조선_") for f in os.listdir(temp_dir)):
-        print("조선 키워드 병합 중...")
+        logger.info("조선 키워드 병합 중...")
         merge_all_contents("조선", "20250525", "20250529")
 
 if __name__ == "__main__":

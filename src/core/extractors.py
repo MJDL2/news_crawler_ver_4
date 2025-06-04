@@ -256,7 +256,7 @@ class NaverNewsURLExtractor(URLExtractor):
             # 페이지 URL 생성
             current_url = f"{search_url}&start={(page - 1) * 10 + 1}"
             logger.info(f"페이지 {page} 스캔 중: {current_url}")
-            print(f"  페이지 {page} 스캔 중...", end='\r')
+            logger.info(f"  페이지 {page} 스캔 중...")
             
             # HTML 가져오기
             html_content = self.get_page_content(current_url)
@@ -303,8 +303,9 @@ class NaverNewsURLExtractor(URLExtractor):
             
             # 종료 조건 확인
             if new_urls_count > 0:
-                logger.info(f"페이지 {page}: {new_urls_count}개 신규 URL (총 {len(collected_urls)}개)")
-                print(f"  페이지 {page}: {new_urls_count}개 신규 URL (총 {len(collected_urls)}개)")
+                logger.info(
+                    f"페이지 {page}: {new_urls_count}개 신규 URL (총 {len(collected_urls)}개)"
+                )
                 consecutive_empty_pages = 0
             else:
                 consecutive_empty_pages += 1
