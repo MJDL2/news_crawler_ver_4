@@ -79,10 +79,12 @@ class NaverNewsDailyCollector:
         
         logger.info(f"날짜별 수집 시작: {start_date.strftime('%Y-%m-%d')} ~ {end_date.strftime('%Y-%m-%d')} ({total_days}일)")
         logger.info(f"검색어: {query}, 정렬: {sort}, 유형: {news_type}")
-        print(f"\n날짜별 수집을 시작합니다...")
-        print(f"  검색어: {query}")
-        print(f"  기간: {start_date.strftime('%Y-%m-%d')} ~ {end_date.strftime('%Y-%m-%d')} ({total_days}일)")
-        print(f"  일별 제한: {daily_limit}개")
+        logger.info("날짜별 수집을 시작합니다...")
+        logger.info(f"  검색어: {query}")
+        logger.info(
+            f"  기간: {start_date.strftime('%Y-%m-%d')} ~ {end_date.strftime('%Y-%m-%d')} ({total_days}일)"
+        )
+        logger.info(f"  일별 제한: {daily_limit}개")
         
         # 통계 초기화
         stats = {
@@ -126,7 +128,6 @@ class NaverNewsDailyCollector:
                 
             except Exception as e:
                 logger.error(f"날짜 {date.strftime('%Y-%m-%d')} 수집 실패: {e}")
-                print(f" 실패: {e}")
                 stats['daily_results'].append({
                     'date': date.strftime('%Y-%m-%d'),
                     'status': 'failed',
@@ -143,10 +144,10 @@ class NaverNewsDailyCollector:
         stats['status'] = 'completed'
         stats['elapsed_time'] = (end_time - start_time).total_seconds()
         
-        print(f"\n\n날짜별 수집 완료!")
-        print(f"  총 URL: {stats['total_urls']}개")
-        print(f"  총 본문: {stats['total_contents']}개")
-        print(f"  소요 시간: {stats['elapsed_time']:.1f}초")
+        logger.info("날짜별 수집 완료!")
+        logger.info(f"  총 URL: {stats['total_urls']}개")
+        logger.info(f"  총 본문: {stats['total_contents']}개")
+        logger.info(f"  소요 시간: {stats['elapsed_time']:.1f}초")
         
         # 통계 저장
         self._save_statistics(stats)
@@ -183,7 +184,7 @@ class NaverNewsDailyCollector:
         """
         date_str = date.strftime('%Y%m%d')
         logger.info(f"날짜 {date.strftime('%Y-%m-%d')} 수집 시작")
-        print(f"\n[{date.strftime('%Y-%m-%d')}] 수집 중...", end='', flush=True)
+        logger.info(f"[{date.strftime('%Y-%m-%d')}] 수집 중...")
         
         # 검색 옵션 설정
         search_option = NaverNewsSearchOption(query)
@@ -266,8 +267,9 @@ class NaverNewsDailyCollector:
             result['contents_extracted'] = len(contents)
             result['content_file'] = content_file
         
-        logger.info(f"날짜 {date.strftime('%Y-%m-%d')} 수집 완료: URL {result['urls_collected']}개, 본문 {result.get('contents_extracted', 0)}개")
-        print(f" URL {result['urls_collected']}개, 본문 {result.get('contents_extracted', 0)}개 [완료]")
+        logger.info(
+            f"날짜 {date.strftime('%Y-%m-%d')} 수집 완료: URL {result['urls_collected']}개, 본문 {result.get('contents_extracted', 0)}개"
+        )
         
         return result
     
@@ -308,9 +310,11 @@ class NaverNewsDailyCollector:
         """
         logger.info(f"컨텐츠 병합 시작: {content_limit}개, 방식: {extraction_mode}")
         if content_limit > 0:
-            print(f"\n컨텐츠 병합 중... (최대 {content_limit}개, 방식: {extraction_mode})")
+            logger.info(
+                f"컨텐츠 병합 중... (최대 {content_limit}개, 방식: {extraction_mode})"
+            )
         else:
-            print(f"\n컨텐츠 병합 중... (전체, 방식: {extraction_mode})")
+            logger.info(f"컨텐츠 병합 중... (전체, 방식: {extraction_mode})")
         
         # 모든 일별 컨텐츠 파일 수집
         all_contents = []
@@ -339,11 +343,9 @@ class NaverNewsDailyCollector:
         
         if not all_contents:
             logger.warning("병합할 컨텐츠가 없습니다.")
-            print("  병합할 컨텐츠가 없습니다.")
             return
         
         logger.info(f"총 {len(all_contents)}개 컨텐츠 수집됨")
-        print(f"  총 {len(all_contents)}개 컨텐츠 수집됨")
         
         # 병합 방식에 따른 컨텐츠 선택
         selected_contents = self._select_contents_by_mode(all_contents, content_limit, extraction_mode)
@@ -356,8 +358,8 @@ class NaverNewsDailyCollector:
             json.dump(selected_contents, f, ensure_ascii=False, indent=2)
         
         logger.info(f"병합 완료: {len(selected_contents)}개 컨텐츠 → {merged_file}")
-        print(f"  병합 완료: {len(selected_contents)}개 컨텐츠")
-        print(f"  저장 위치: {merged_file}")
+        logger.info(f"  병합 완료: {len(selected_contents)}개 컨텐츠")
+        logger.info(f"  저장 위치: {merged_file}")
         
         # 통계 업데이트
         stats['merged_file'] = merged_file
