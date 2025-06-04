@@ -7,10 +7,8 @@
 import sys
 import os
 
-# src 디렉토리를 path에 추가
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
-
-from core.daily_collector import NaverNewsDailyCollector
+# 패키지가 설치되었으므로 직접 import
+from src.core.daily_collector import NaverNewsDailyCollector
 from datetime import datetime, timedelta
 
 def test_daily_collector():
