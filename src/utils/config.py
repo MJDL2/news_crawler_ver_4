@@ -155,17 +155,12 @@ class Config:
         """설정 파일에서 설정을 로드합니다."""
         config_path = config_file or self._config_file
         
-        # 기존 설정 파일들과의 호환성 유지
         if not os.path.exists(config_path):
-            # unified_config.json이 없으면 기존 파일들 확인
-            if os.path.exists('crawler_config.json'):
-                config_path = 'crawler_config.json'
-            elif os.path.exists('config.json'):
-                config_path = 'config.json'
-            else:
-                logger.info(f"설정 파일이 없습니다. 기본 설정을 사용합니다: {config_path}")
-                self.save_config()
-                return
+            logger.info(
+                f"설정 파일이 없습니다. 기본 설정을 사용합니다: {config_path}"
+            )
+            self.save_config()
+            return
         
         try:
             with open(config_path, 'r', encoding='utf-8') as f:

@@ -4,8 +4,7 @@
 # 데이터 파일
 /data/
 *.json
-!config.json
-!crawler_config.json
+!unified_config.json
 
 # Python 파일
 __pycache__/

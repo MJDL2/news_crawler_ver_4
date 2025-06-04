@@ -6,7 +6,7 @@
 ## 즉시 적용 가능한 해결책
 
 ### 1. 설정 수정 완료 ✓
-- `crawler_config.json` 수정됨:
+- `unified_config.json` 수정:
   - `delay_between_requests`: 2.5초 → 4.0초
   - `max_urls_per_search`: 100개 → 40개
 

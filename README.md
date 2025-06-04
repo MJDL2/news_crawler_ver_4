@@ -57,8 +57,7 @@ run_with_proxy.bat  # 프록시 주소 설정 필요
 
 ### 설정 파일 (v4.2.0 업데이트)
 
-**권장**: `unified_config.json` 사용 (모든 설정 통합)
-**레거시**: `config.json` + `crawler_config.json` (하위 호환성 유지)
+**설정 파일**: `unified_config.json` 하나로 모든 설정을 관리합니다.
 
 #### 주요 설정 항목
 
@@ -136,9 +135,7 @@ news_crawler_ver_4/
 │   └── IMPROVEMENTS_v4.2.0.md  # v4.2.0 개선사항
 ├── tests/                  # 테스트 코드
 ├── test_scripts/           # 테스트 스크립트
-├── config.json             # 레거시 설정 파일
-├── crawler_config.json     # 크롤링 설정 파일
-├── unified_config.json     # 통합 설정 파일 (v4.2 권장)
+├── unified_config.json     # 통합 설정 파일
 ├── main.py                 # 진입점
 ├── requirements.txt        # 의존성 패키지
 ├── .gitignore             # Git 제외 파일
@@ -226,9 +223,7 @@ Python 3.13 사용 시 cookiejar 오류가 발생하는 경우:
 - 권장: Python 3.11 또는 3.12 사용
 
 ### 설정 파일 관련
-- **v4.2.0**: `unified_config.json` 사용 권장 (모든 설정 통합)
-- **이전 버전**: `config.json` + `crawler_config.json` (하위 호환성 유지)
-- 설정 충돌 시: `unified_config.json`이 우선 적용
+모든 옵션은 `unified_config.json` 파일에서 관리합니다. 설정 충돌 시 이 파일의 값이 적용됩니다.
 
 더 많은 문제 해결 방법은 [사용자 가이드](docs/USER_GUIDE.md#8-문제-해결)를 참조하세요.
 

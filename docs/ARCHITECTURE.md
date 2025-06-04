@@ -10,7 +10,7 @@
 news_crawler_ver_4/
 ├── main.py                    # 프로그램 진입점
 ├── requirements.txt           # 의존성 패키지 목록
-├── config.json               # 설정 파일
+├── unified_config.json       # 통합 설정 파일
 │
 ├── src/                       # 소스 코드 디렉토리
 │   ├── core/                  # 핵심 비즈니스 로직
@@ -122,7 +122,7 @@ main.py
 ### Utils 모듈
 
 #### config.py
-- 설정 파일(config.json) 관리
+- 통합 설정 파일(unified_config.json) 관리
 - 환경별 설정 지원
 
 #### file_saver.py
@@ -174,22 +174,22 @@ main.py
 
 ## 설정 관리
 
-### config.json 구조
+### unified_config.json 구조
 ```json
 {
   "network": {
     "timeout": 30,
     "retries": 3,
-    "delay_between_requests": 1.0
+    "request_delay_min": 1.0,
+    "request_delay_max": 3.0
   },
   "crawling": {
-    "max_pages": 0,
-    "max_urls": 0,
-    "similarity_threshold": 0.8
+    "max_pages_per_search": 10,
+    "max_urls_per_search": 100
   },
   "storage": {
-    "news_data_dir": "data/news_data",
-    "url_data_dir": "data/url_data"
+    "root_dir": "data",
+    "news_data_dir": "data/news_data"
   }
 }
 ```
