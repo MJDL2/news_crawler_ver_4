@@ -4,11 +4,11 @@ URL 추출 모듈
 네이버 뉴스 검색 결과에서 URL을 추출하는 기능을 제공합니다.
 """
 
-import re
 import logging
-import time
 import random
-from typing import List, Dict, Optional, Tuple
+import re
+import time
+from typing import Dict, List, Optional
 from difflib import SequenceMatcher
 
 import requests
