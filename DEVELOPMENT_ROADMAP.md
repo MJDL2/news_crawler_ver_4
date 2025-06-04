@@ -18,7 +18,7 @@
 ### 현재 문제점 (업데이트됨)
 1. **코드 구조** 
    - ~~테스트 파일들이 루트 디렉토리에 산재~~ → 일부 정리됨
-   - 설정 파일 3개가 혼재 (config.json, crawler_config.json, unified_config.json)
+   - ~~설정 파일 3개가 혼재~~ → unified_config.json 하나로 정리됨
    - ~~print와 logger 혼용~~ → 대부분 해결됨
 
 2. **미완성 기능**
@@ -54,8 +54,7 @@
 
 ### 우선순위 1: Phase 2 - 기능 완성 및 구조 개선
 ```
-현재: config.json + crawler_config.json + unified_config.json
-목표: unified_config.json 하나로 통합
+현재: unified_config.json 하나로 통합 완료
 
 AI가 수행할 작업:
 1. 레거시 설정 파일 내용 통합
