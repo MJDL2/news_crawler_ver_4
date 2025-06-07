@@ -153,7 +153,7 @@ class NaverNewsDailyCollector:
         self._save_statistics(stats)
         
         # 최종 병합 처리
-        if extract_content and content_limit > 0:
+        if extract_content:
             self._merge_daily_contents(stats, content_limit, extraction_mode)
         
         return stats    
