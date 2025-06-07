@@ -191,6 +191,15 @@ python main.py "인공지능" --period 1w --sort recent --extract-content --cont
 python main.py "경제" --period custom --start-date 20240501 --end-date 20240531 --extract-content --extraction-mode balanced
 ```
 
+### 병합 도구(비상용)
+`merge_all_contents.py` 스크립트는 날짜별로 저장된 JSON 파일을 한 번에 병합할 때 사용합니다.
+새로운 병합 로직이 문제를 일으킬 경우 임시 해결책으로 실행하면 됩니다.
+예시:
+```bash
+python merge_all_contents.py
+```
+
+
 ## 출력 형식
 
 수집된 데이터는 JSON 형식으로 저장됩니다:
