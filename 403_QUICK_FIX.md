@@ -21,7 +21,7 @@ run_anti_403.bat
 
 ### 3. 대화형 모드로 소량 수집
 ```bash
-run_interactive.bat
+run_interactive_v2.bat
 ```
 설정 권장값:
 - 검색어: 조선
