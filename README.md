@@ -146,10 +146,8 @@ news_crawler_ver_4/
 ├── DOCUMENTATION_UPDATE_v4.2.1.md  # 문서 업데이트 기록
 ├── IMPROVEMENTS_SUMMARY.md     # 개선사항 요약
 ├── show_help.bat          # CLI 도움말 표시 (Windows)
-├── run_interactive.bat    # Windows 대화형 실행
 ├── run_interactive_v2.bat # Windows 대화형 실행 (권장)
 ├── run_interactive.ps1    # PowerShell 실행 스크립트
-├── run_safe.bat          # 안전 모드 실행
 ├── run_safe_mode.bat     # 403 오류 대응 모드
 ├── run_anti_403.bat      # 403 오류 방지 실행
 ├── run_with_proxy.bat    # 프록시 실행 모드
